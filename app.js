@@ -131,39 +131,37 @@ function render() {
   addTask.id = 'new-task';
   heading.append(node('h2', '', 'Zeitplan'), addTask);
   const timeline = node('ol', 'timeline');
-  const sortHint = node('p', 'meta sort-hint', 'Am Griff ziehen oder dort die Pfeiltasten verwenden. Beim Verschieben auf einen anderen Tag ändert sich die Fälligkeit.');
+  const sortHint = node('p', 'meta sort-hint', 'Ziehe eine Aufgabe am Griff auf ein Datum oder nutze dort die Pfeiltasten. Das Zieldatum wird zur neuen Fälligkeit.');
   sortHint.id = 'sort-hint';
   const today = calendarDate();
-  const entries = [{ date: today, current: true }, ...list.tasks.map((task) => ({ date: task.date, task }))];
-  const start = entries.reduce((earliest, entry) => entry.date < earliest ? entry.date : earliest, today);
-  if (list.date >= start) entries.push({ date: list.date });
-  entries.sort((a, b) => a.date.localeCompare(b.date));
-  let lastDate;
-  for (const entry of entries) {
+  let start = today;
+  let end = list.date > today ? list.date : today;
+  const tasksByDate = new Map();
+  for (const task of list.tasks) {
+    if (task.date < start) start = task.date;
+    if (task.date > end) end = task.date;
+    if (!tasksByDate.has(task.date)) tasksByDate.set(task.date, []);
+    tasksByDate.get(task.date).push(task);
+  }
+
+  const canSort = list.tasks.length > 0 && (start !== end || list.tasks.length > 1);
+  // Step through UTC dates so days stay consecutive across daylight saving time changes.
+  const endDay = Date.parse(end);
+  for (let day = Date.parse(start); day <= endDay; day += 86_400_000) {
+    const date = new Date(day).toISOString().slice(0, 10);
+    const tasks = tasksByDate.get(date) ?? [];
     const row = node('li', 'timeline-row');
-    if (entry.current) {
+    row.dataset.date = date;
+
+    const label = node('div', date === today ? 'day-label today-label' : 'day-label');
+    if (date === today) {
       row.classList.add('timeline-today');
-      const label = node('div', 'today-label');
-      label.append(node('strong', '', 'Heute'), time(today));
-      row.append(label);
-      timeline.append(row);
-      lastDate = today;
-      continue;
+      label.append(node('strong', '', 'Heute'));
     }
-    if (entry.date !== lastDate) {
-      row.append(time(entry.date));
-      lastDate = entry.date;
-    }
-    const task = entry.task;
-    if (!task) {
-      const milestone = node('div', 'milestone');
-      const emblem = node('span', 'milestone-emblem', '◎');
-      emblem.setAttribute('aria-hidden', 'true');
-      const milestoneText = node('div', 'milestone-text');
-      milestoneText.append(node('span', '', 'Zieltermin'), node('strong', '', list.event));
-      milestone.append(emblem, milestoneText);
-      row.append(milestone);
-    } else {
+    label.append(time(date));
+    row.append(label);
+
+    for (const task of tasks) {
       const item = button('', 'task' + (task.done ? ' done' : ''), () => openTask(task.id));
       const mark = node('span', 'mark', task.done ? '✓' : '');
       mark.setAttribute('aria-hidden', 'true');
@@ -181,23 +179,34 @@ function render() {
       const card = node('div', 'task-card');
       card.dataset.taskId = task.id;
       card.dataset.date = task.date;
-      const handle = node('button', 'drag-handle secondary', '⠿');
-      handle.type = 'button';
-      handle.id = 'sort-' + task.id;
-      handle.setAttribute('aria-label', 'Aufgabe verschieben: ' + task.title);
-      handle.setAttribute('aria-describedby', sortHint.id);
-      handle.setAttribute('aria-keyshortcuts', 'ArrowUp ArrowDown');
-      card.append(item, handle);
+      card.append(item);
+      if (canSort) {
+        const handle = node('button', 'drag-handle secondary', '⠿');
+        handle.type = 'button';
+        handle.id = 'sort-' + task.id;
+        handle.setAttribute('aria-label', 'Aufgabe verschieben: ' + task.title);
+        handle.setAttribute('aria-describedby', sortHint.id);
+        handle.setAttribute('aria-keyshortcuts', 'ArrowUp ArrowDown');
+        card.append(handle);
+      }
       row.append(card);
+    }
+
+    if (date === list.date) {
+      const milestone = node('div', 'milestone');
+      const emblem = node('span', 'milestone-emblem', '◎');
+      emblem.setAttribute('aria-hidden', 'true');
+      const milestoneText = node('div', 'milestone-text');
+      milestoneText.append(node('span', '', 'Zieltermin'), node('strong', '', list.event));
+      milestone.append(emblem, milestoneText);
+      row.append(milestone);
     }
     timeline.append(row);
   }
   content.append(hero, heading);
-  if (list.tasks.length > 1) {
+  if (canSort) {
     content.append(sortHint);
     enableTaskSorting(timeline);
-  } else {
-    timeline.querySelector('.drag-handle')?.remove();
   }
   content.append(timeline);
 }
@@ -208,18 +217,23 @@ function enableTaskSorting(timeline) {
   function move(source, target, position) {
     const id = source.dataset.taskId;
     const handle = get('sort-' + id);
-    save({ action: 'moveTask', listId, taskId: id, targetId: target.dataset.taskId, position }, handle, get('error'), () => {
+    const destination = target.dataset.taskId ? { targetId: target.dataset.taskId, position } : { Datum: target.dataset.date };
+    save({ action: 'moveTask', listId, taskId: id, ...destination }, handle, get('error'), () => {
       render();
-      get('sort-' + id)?.focus({ preventScroll: true });
+      (get('sort-' + id) || get('task-' + id))?.focus();
       get('status').textContent = source.querySelector('.task-words strong').textContent + ' verschoben. Fällig am ' + dateLabel(target.dataset.date) + '.';
     });
   }
 
   function markTarget(x, y) {
-    drag.target?.classList.remove('drop-before', 'drop-after');
-    const target = document.elementFromPoint(x, y)?.closest('.task-card');
+    drag.target?.classList.remove('drop-before', 'drop-after', 'drop-day');
+    const target = document.elementFromPoint(x, y)?.closest('.task-card, .timeline-row');
     drag.target = target && target !== drag.source && timeline.contains(target) ? target : null;
     if (!drag.target) return;
+    if (!target.dataset.taskId) {
+      target.classList.add('drop-day');
+      return;
+    }
     const box = target.getBoundingClientRect();
     drag.position = y < box.top + box.height / 2 ? 'before' : 'after';
     target.classList.add('drop-' + drag.position);
@@ -243,7 +257,7 @@ function enableTaskSorting(timeline) {
     drag = null;
     if (frame !== undefined) cancelAnimationFrame(frame);
     source.classList.remove('dragging');
-    target?.classList.remove('drop-before', 'drop-after');
+    target?.classList.remove('drop-before', 'drop-after', 'drop-day');
     if (drop && target && timeline.isConnected) move(source, target, position);
   }
 
@@ -272,11 +286,16 @@ function enableTaskSorting(timeline) {
     const handle = event.target.closest('.drag-handle');
     if (!handle || updating || drag || !['ArrowUp', 'ArrowDown'].includes(event.key)) return;
     event.preventDefault();
-    const cards = [...timeline.querySelectorAll('.task-card')];
     const source = handle.closest('.task-card');
+    const row = source.closest('.timeline-row');
     const up = event.key === 'ArrowUp';
-    const target = cards[cards.indexOf(source) + (up ? -1 : 1)];
-    if (target) move(source, target, up ? 'before' : 'after');
+    const sibling = up ? source.previousElementSibling : source.nextElementSibling;
+    if (sibling?.dataset.taskId) {
+      move(source, sibling, up ? 'before' : 'after');
+      return;
+    }
+    const day = up ? row.previousElementSibling : row.nextElementSibling;
+    if (day) move(source, day);
   });
 }
 

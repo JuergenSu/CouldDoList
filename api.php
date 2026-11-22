@@ -68,6 +68,17 @@ function mutate(array &$lists, array $input): void {
 
     $taskIndex = findIndex($list['tasks'], field($input, 'taskId', 24));
     if ($action === 'moveTask') {
+        if (!array_key_exists('targetId', $input)) {
+            $date = dateField($input);
+            $task = $list['tasks'][$taskIndex];
+            if ($date !== $task['date']) {
+                $task['date'] = $date;
+                array_splice($list['tasks'], $taskIndex, 1);
+                $list['tasks'][] = $task;
+            }
+            return;
+        }
+
         $targetIndex = findIndex($list['tasks'], field($input, 'targetId', 24));
         $position = $input['position'] ?? '';
         if ($taskIndex === $targetIndex || !in_array($position, ['before', 'after'], true)) {

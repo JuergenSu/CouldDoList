@@ -185,22 +185,41 @@ progress::-moz-progress-bar { background: #b7df9e; }
 .timeline-head h2, .dialog-head h2 { font-size: clamp(1.75rem, 3.5vw, 2.25rem); }
 .sort-hint { margin-bottom: 1rem; }
 .timeline { margin: 0 0 0 .375rem; padding: .0625rem 0 .25rem 1.375rem; list-style: none; border-left: 1px solid #b9cdb9; }
-.timeline-row { position: relative; margin-block: .625rem; }
+.timeline-row {
+  position: relative;
+  display: grid;
+  gap: .425rem;
+  margin-block: .25rem;
+  border-radius: .625rem;
+}
+.timeline-row:has(.task-card, .milestone) { margin-bottom: .75rem; }
 .timeline-row::before {
   content: '';
   position: absolute;
   left: -1.625rem;
-  top: .55rem;
+  top: .8rem;
   width: .4375rem;
   height: .4375rem;
   background: #62816a;
   border-radius: 50%;
 }
 .timeline-today::before { background: var(--red); }
-.today-label { display: flex; align-items: center; flex-wrap: wrap; gap: .25rem .625rem; color: var(--red); font-size: .875rem; }
+.day-label {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .25rem .625rem;
+  min-height: 2rem;
+  padding: .25rem .375rem;
+  color: var(--muted);
+  font-size: .875rem;
+  font-weight: 700;
+}
+.today-label { color: var(--red); }
+.drop-day { background: #e5efe2; outline: 2px solid var(--green); }
+.drop-day > .day-label { color: var(--ink); }
 .today-label strong { border-radius: .375rem; padding: .1rem .425rem; background: #f5e1de; }
 .today-label::after { content: ''; flex: 1 1 2rem; border-top: 2px solid var(--red); }
-.timeline-row > time { display: block; font-size: .875rem; color: var(--muted); font-weight: 700; margin-bottom: .425rem; }
 .task-card {
   display: flex;
   align-items: stretch;
