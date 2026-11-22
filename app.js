@@ -338,7 +338,7 @@ function openCreate(action) {
     input('Liste', 'text', 100), input('Ereignis', 'text', 100), input('Datum', 'date'),
   ] : [
     input('Aufgabe', 'text', 120), input('Beschreibung', 'textarea', 3000, { required: false }),
-    input('Datum', 'date', null, { value: lists.find((list) => list.id === listId).date }),
+    input('Datum', 'date', null, { value: calendarDate() }),
   ]));
   showError(createForm.querySelector('.form-error'));
   createDialog.showModal();
