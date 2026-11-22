@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#edf1eb">
+  <meta name="description" content="Aufgaben, Termine und Gespräche für dein nächstes Ereignis.">
+  <title>CouldDoList</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="top"><div class="frame"><a class="brand" href="./"><span aria-hidden="true">✓</span> CouldDoList</a></div></header>
+  <div class="frame layout">
+    <aside>
+      <div class="sidebar-head"><h2>Meine Listen</h2><button type="button" id="new-list" aria-label="Neue Liste" class="icon-button">+</button></div>
+      <nav id="lists" aria-label="Aufgabenlisten"></nav>
+    </aside>
+    <main id="main">
+      <p id="error" role="alert" hidden></p>
+      <div id="content"><p>Lade Listen …</p></div>
+    </main>
+  </div>
+
+  <dialog id="create-dialog" aria-labelledby="create-title">
+    <form id="create-form">
+      <div class="dialog-head"><h2 id="create-title"></h2><button type="button" class="close" aria-label="Dialog schließen">×</button></div>
+      <div id="fields"></div>
+      <p class="form-error" role="alert" hidden></p>
+      <button class="primary" type="submit">Speichern</button>
+    </form>
+  </dialog>
+
+  <dialog id="task-dialog" aria-labelledby="task-title">
+    <div class="dialog-head"><h2 id="task-title"></h2><button type="button" class="close" aria-label="Dialog schließen">×</button></div>
+    <div id="task-detail"></div>
+    <section class="conversation" aria-labelledby="conversation-title">
+      <h3 id="conversation-title">Kommentare</h3>
+      <div id="comments"></div>
+      <form id="comment-form">
+        <label>Name (optional)<input name="Name" maxlength="60" autocomplete="nickname"></label>
+        <label>Kommentar<textarea name="Kommentar" maxlength="2000" rows="3" required></textarea></label>
+        <p class="form-error" role="alert" hidden></p>
+        <button class="primary" type="submit">Kommentar hinzufügen</button>
+      </form>
+    </section>
+  </dialog>
+</body>
+</html>
