@@ -75,6 +75,14 @@ function completion(list) {
   return { done, percent };
 }
 
+function cover(filename) {
+  const image = node('img', 'cover');
+  image.src = 'images/' + filename + '.webp';
+  image.alt = '';
+  image.decoding = 'async';
+  return image;
+}
+
 function render() {
   const list = lists.find((entry) => entry.id === listId) || lists[0];
   listId = list?.id;
@@ -85,30 +93,38 @@ function render() {
     if (entry.id === listId) item.setAttribute('aria-current', 'true');
     const summary = node('span', 'list-summary');
     summary.append(time(entry.date), node('span', '', completion(entry).percent + ' % erledigt'));
-    item.append(node('strong', '', entry.title), summary);
+    const details = node('span', 'list-details');
+    details.append(node('strong', '', entry.title), summary);
+    const glyph = node('span', 'list-glyph');
+    glyph.setAttribute('aria-hidden', 'true');
+    item.append(glyph, details);
     nav.append(item);
   }
   const content = get('content');
   content.replaceChildren();
   if (!list) {
-    const empty = node('section', 'empty');
-    empty.append(node('h1', '', 'Alles bereit für deine erste Liste'), node('p', '', 'Lege ein Ereignis mit Zieltermin an und plane die Aufgaben bis dahin.'),
+    const empty = node('section', 'overview empty');
+    const copy = node('div', 'overview-copy');
+    copy.append(node('h1', '', 'Deine erste Liste'), node('p', '', 'Lege ein Ereignis mit Zieltermin an und plane die Aufgaben bis dahin.'),
       button('+ Neue Liste', 'primary', () => openCreate('createList')));
+    empty.append(copy, cover('list-start'));
     content.append(empty);
     return;
   }
 
   const { done, percent } = completion(list);
-  const hero = node('section', 'hero');
+  const hero = node('section', 'overview hero');
+  const copy = node('div', 'overview-copy');
   const event = node('p', 'event');
-  event.append(document.createTextNode(list.event + ' · '), time(list.date));
+  event.append(node('span', '', list.event), time(list.date));
   const progress = node('progress');
   progress.max = 100;
   progress.value = percent;
   progress.setAttribute('aria-label', 'Erledigte Aufgaben in Prozent');
   const progressText = node('div', 'progress-text');
   progressText.append(node('span', '', done + ' von ' + list.tasks.length + ' Aufgaben erledigt'), node('strong', '', percent + ' %'));
-  hero.append(event, node('h1', '', list.title), progressText, progress);
+  copy.append(event, node('h1', '', list.title), progressText, progress);
+  hero.append(copy, cover('list-plan'));
 
   const heading = node('div', 'timeline-head');
   const addTask = button('+ Neue Aufgabe', 'primary', () => openCreate('createTask'));
@@ -141,16 +157,25 @@ function render() {
     const task = entry.task;
     if (!task) {
       const milestone = node('div', 'milestone');
-      milestone.append(node('span', '', 'Zieltermin'), node('strong', '', list.event));
+      const emblem = node('span', 'milestone-emblem', '◎');
+      emblem.setAttribute('aria-hidden', 'true');
+      const milestoneText = node('div', 'milestone-text');
+      milestoneText.append(node('span', '', 'Zieltermin'), node('strong', '', list.event));
+      milestone.append(emblem, milestoneText);
       row.append(milestone);
     } else {
       const item = button('', 'task' + (task.done ? ' done' : ''), () => openTask(task.id));
-      const mark = node('span', 'mark', task.done ? '✓' : '○');
+      const mark = node('span', 'mark', task.done ? '✓' : '');
       mark.setAttribute('aria-hidden', 'true');
       const words = node('span', 'task-words');
-      words.append(node('strong', '', task.title), node('span', !task.done && task.date < today ? 'late' : 'meta',
-        (task.done ? 'Erledigt' : task.date < today ? 'Überfällig' : 'Offen') + ' · ' +
-        task.comments.length + (task.comments.length === 1 ? ' Kommentar' : ' Kommentare')));
+      words.append(node('strong', '', task.title));
+      if (task.description) words.append(node('span', 'task-summary', task.description));
+      const properties = node('span', 'task-properties');
+      const overdue = !task.done && task.date < today;
+      const status = node('span', 'task-status' + (overdue ? ' late' : ''), task.done ? 'Erledigt' : overdue ? 'Überfällig' : 'Offen');
+      const comments = node('span', 'meta', task.comments.length + (task.comments.length === 1 ? ' Kommentar' : ' Kommentare'));
+      properties.append(status, comments);
+      words.append(properties);
       item.id = 'task-' + task.id;
       item.append(mark, words);
       const card = node('div', 'task-card');

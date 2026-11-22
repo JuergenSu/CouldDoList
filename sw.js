@@ -1,8 +1,12 @@
 'use strict';
 
 const cachePrefix = 'coulddolist:' + self.registration.scope + ':';
-const cacheName = cachePrefix + '2';
-const shell = ['./index.html', './style.css', './app.js'].map((file) => new URL(file, self.registration.scope).href);
+const cacheName = cachePrefix + '3';
+const shell = [
+  './index.html', './style.css', './app.js',
+  './fonts/dm-sans.woff2', './fonts/dm-serif-display.woff2',
+  './images/list-start.webp', './images/list-plan.webp',
+].map((file) => new URL(file, self.registration.scope).href);
 const home = new URL('./', self.registration.scope).href;
 
 self.addEventListener('install', (event) => {

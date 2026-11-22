@@ -4,7 +4,7 @@ Deutschsprachige Aufgabenplanung für Ereignisse wie Weihnachten, Ostern oder Ur
 
 ## Auf den Webspace kopieren
 
-1. Die Dateien `index.html`, `style.css`, `app.js`, `api.php`, `manifest.webmanifest`, `sw.js` und die Ordner `data/` und `icons/` in einen Ordner auf einem Webspace mit **PHP 8.1 oder neuer** hochladen. Die versteckte Datei `data/.htaccess` gehört dazu.
+1. Die Dateien `index.html`, `style.css`, `app.js`, `api.php`, `manifest.webmanifest`, `sw.js` und die Ordner `data/`, `icons/`, `fonts/` und `images/` in einen Ordner auf einem Webspace mit **PHP 8.1 oder neuer** hochladen. Die versteckte Datei `data/.htaccess` gehört dazu.
 2. Dem PHP-Prozess Schreibrechte für `data/` geben.
 3. Den Ordner im Browser öffnen. PHP legt beim ersten Speichern `data/lists.json` an.
 
