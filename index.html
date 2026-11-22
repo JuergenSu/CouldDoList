@@ -16,6 +16,15 @@
   <header class="top"><div class="frame"><a class="brand" href="./"><img src="icons/icon-32.png" width="36" height="36" alt="">CouldDoList</a></div></header>
   <div class="frame layout">
     <aside>
+      <form id="name-form" class="name-form">
+        <label for="sidebar-name">Dein Name</label>
+        <div class="sidebar-name-controls">
+          <input id="sidebar-name" name="Name" maxlength="60" autocomplete="nickname">
+          <button id="save-sidebar-name" type="submit" class="secondary">Speichern</button>
+          <button id="edit-sidebar-name" type="button" class="secondary name-pencil" aria-label="Deinen Namen ändern" title="Deinen Namen ändern" hidden>✎</button>
+        </div>
+        <p id="name-status" class="visually-hidden" role="status"></p>
+      </form>
       <div class="sidebar-head"><h2>Meine Listen</h2><button type="button" id="new-list" aria-label="Neue Liste" title="Neue Liste" class="icon-button">+</button></div>
       <nav id="lists" aria-label="Aufgabenlisten"></nav>
     </aside>
@@ -44,7 +53,7 @@
       <form id="comment-form">
         <div class="comment-name">
           <label>Name (optional)<input name="Name" maxlength="60" autocomplete="nickname"></label>
-          <button type="button" id="edit-comment-name" class="secondary" aria-label="Kommentarnamen ändern" title="Kommentarnamen ändern" hidden>✎</button>
+          <button type="button" id="edit-comment-name" class="secondary name-pencil" aria-label="Kommentarnamen ändern" title="Kommentarnamen ändern" hidden>✎</button>
         </div>
         <label>Kommentar<textarea name="Kommentar" maxlength="2000" rows="3" required></textarea></label>
         <p class="form-error" role="alert" hidden></p>

@@ -7,6 +7,10 @@ const createForm = get('create-form');
 const commentForm = get('comment-form');
 const commentName = commentForm.elements.Name;
 const editCommentName = get('edit-comment-name');
+const nameForm = get('name-form');
+const sidebarName = get('sidebar-name');
+const editSidebarName = get('edit-sidebar-name');
+const saveSidebarName = get('save-sidebar-name');
 const nameCookie = 'coulddolist_comment_name';
 const millisecondsPerDay = 86_400_000;
 const dateFormat = new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
@@ -384,30 +388,55 @@ function savedCommentName() {
   }
 }
 
-function setCommentName(value) {
-  commentName.value = value;
-  commentName.readOnly = Boolean(value);
-  editCommentName.hidden = !value;
+function showName(input, edit, value) {
+  input.value = value;
+  input.readOnly = Boolean(value);
+  edit.hidden = !value;
+}
+
+function showSidebarName(value) {
+  showName(sidebarName, editSidebarName, value);
+  saveSidebarName.hidden = Boolean(value);
+}
+
+function startNameEdit(input, edit) {
+  input.readOnly = false;
+  edit.hidden = true;
+  input.focus();
+  input.select();
 }
 
 function rememberCommentName(value) {
   const maxAge = value ? 31536000 : 0;
   const secure = location.protocol === 'https:' ? '; Secure' : '';
   document.cookie = nameCookie + '=' + encodeURIComponent(value) + '; Max-Age=' + maxAge + '; SameSite=Lax' + secure;
-  setCommentName(value);
+  showName(commentName, editCommentName, value);
+  showSidebarName(value);
 }
 
-editCommentName.addEventListener('click', () => {
-  commentName.readOnly = false;
-  editCommentName.hidden = true;
-  commentName.select();
-  commentName.focus();
+editCommentName.addEventListener('click', () => startNameEdit(commentName, editCommentName));
+
+editSidebarName.addEventListener('click', () => {
+  saveSidebarName.hidden = false;
+  get('name-status').textContent = '';
+  startNameEdit(sidebarName, editSidebarName);
 });
+
+nameForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  if (sidebarName.readOnly) return;
+  const value = sidebarName.value.trim();
+  rememberCommentName(value);
+  get('name-status').textContent = value ? 'Name gespeichert.' : 'Gespeicherter Name entfernt.';
+  (value ? editSidebarName : sidebarName).focus();
+});
+
+showSidebarName(savedCommentName());
 
 function openTask(id) {
   taskId = id;
   commentForm.reset();
-  setCommentName(savedCommentName());
+  showName(commentName, editCommentName, savedCommentName());
   showError(commentForm.querySelector('.form-error'));
   drawTask();
   taskDialog.showModal();
