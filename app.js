@@ -112,14 +112,23 @@ function render() {
   addTask.id = 'new-task';
   heading.append(node('h2', '', 'Zeitplan'), addTask);
   const timeline = node('ol', 'timeline');
-  const entries = [
-    ...list.tasks.map((task) => ({ date: task.date, task })),
-    { date: list.date },
-  ].sort((a, b) => a.date.localeCompare(b.date));
-  let lastDate;
   const today = calendarDate();
+  const entries = [{ date: today, current: true }, ...list.tasks.map((task) => ({ date: task.date, task }))];
+  const start = entries.reduce((earliest, entry) => entry.date < earliest ? entry.date : earliest, today);
+  if (list.date >= start) entries.push({ date: list.date });
+  entries.sort((a, b) => a.date.localeCompare(b.date));
+  let lastDate;
   for (const entry of entries) {
     const row = node('li', 'timeline-row');
+    if (entry.current) {
+      row.classList.add('timeline-today');
+      const label = node('div', 'today-label');
+      label.append(node('strong', '', 'Heute'), time(today));
+      row.append(label);
+      timeline.append(row);
+      lastDate = today;
+      continue;
+    }
     if (entry.date !== lastDate) {
       row.append(time(entry.date));
       lastDate = entry.date;
