@@ -1,7 +1,7 @@
 'use strict';
 
 const cachePrefix = 'coulddolist:' + self.registration.scope + ':';
-const cacheName = cachePrefix + '1';
+const cacheName = cachePrefix + '2';
 const shell = ['./index.html', './style.css', './app.js'].map((file) => new URL(file, self.registration.scope).href);
 const home = new URL('./', self.registration.scope).href;
 

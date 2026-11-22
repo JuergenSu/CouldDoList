@@ -115,6 +115,8 @@ function render() {
   addTask.id = 'new-task';
   heading.append(node('h2', '', 'Zeitplan'), addTask);
   const timeline = node('ol', 'timeline');
+  const sortHint = node('p', 'meta sort-hint', 'Am Griff ziehen oder dort die Pfeiltasten verwenden. Beim Verschieben auf einen anderen Tag ändert sich die Fälligkeit.');
+  sortHint.id = 'sort-hint';
   const today = calendarDate();
   const entries = [{ date: today, current: true }, ...list.tasks.map((task) => ({ date: task.date, task }))];
   const start = entries.reduce((earliest, entry) => entry.date < earliest ? entry.date : earliest, today);
@@ -151,11 +153,106 @@ function render() {
         task.comments.length + (task.comments.length === 1 ? ' Kommentar' : ' Kommentare')));
       item.id = 'task-' + task.id;
       item.append(mark, words);
-      row.append(item);
+      const card = node('div', 'task-card');
+      card.dataset.taskId = task.id;
+      card.dataset.date = task.date;
+      const handle = node('button', 'drag-handle secondary', '⠿');
+      handle.type = 'button';
+      handle.id = 'sort-' + task.id;
+      handle.setAttribute('aria-label', 'Aufgabe verschieben: ' + task.title);
+      handle.setAttribute('aria-describedby', sortHint.id);
+      handle.setAttribute('aria-keyshortcuts', 'ArrowUp ArrowDown');
+      card.append(item, handle);
+      row.append(card);
     }
     timeline.append(row);
   }
-  content.append(hero, heading, timeline);
+  content.append(hero, heading);
+  if (list.tasks.length > 1) {
+    content.append(sortHint);
+    enableTaskSorting(timeline);
+  } else {
+    timeline.querySelector('.drag-handle')?.remove();
+  }
+  content.append(timeline);
+}
+
+function enableTaskSorting(timeline) {
+  let drag;
+
+  function move(source, target, position) {
+    const id = source.dataset.taskId;
+    const handle = get('sort-' + id);
+    save({ action: 'moveTask', listId, taskId: id, targetId: target.dataset.taskId, position }, handle, get('error'), () => {
+      render();
+      get('sort-' + id)?.focus({ preventScroll: true });
+      get('status').textContent = source.querySelector('.task-words strong').textContent + ' verschoben. Fällig am ' + dateLabel(target.dataset.date) + '.';
+    });
+  }
+
+  function markTarget(x, y) {
+    drag.target?.classList.remove('drop-before', 'drop-after');
+    const target = document.elementFromPoint(x, y)?.closest('.task-card');
+    drag.target = target && target !== drag.source && timeline.contains(target) ? target : null;
+    if (!drag.target) return;
+    const box = target.getBoundingClientRect();
+    drag.position = y < box.top + box.height / 2 ? 'before' : 'after';
+    target.classList.add('drop-' + drag.position);
+  }
+
+  function scrollDuringDrag() {
+    if (!timeline.isConnected) return;
+    const edge = 64;
+    const step = drag.y < edge ? -12 : drag.y > window.innerHeight - edge ? 12 : 0;
+    if (step) {
+      window.scrollBy(0, step);
+      markTarget(drag.x, drag.y);
+    }
+    drag.frame = requestAnimationFrame(scrollDuringDrag);
+  }
+
+  function finish(event, drop = false) {
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    if (drop && drag.active) markTarget(event.clientX, event.clientY);
+    const { source, target, position, frame } = drag;
+    drag = null;
+    if (frame !== undefined) cancelAnimationFrame(frame);
+    source.classList.remove('dragging');
+    target?.classList.remove('drop-before', 'drop-after');
+    if (drop && target && timeline.isConnected) move(source, target, position);
+  }
+
+  timeline.addEventListener('pointerdown', (event) => {
+    const handle = event.target.closest('.drag-handle');
+    if (!handle || event.button !== 0 || updating || drag) return;
+    drag = { source: handle.closest('.task-card'), pointerId: event.pointerId, x: event.clientX, y: event.clientY };
+    handle.setPointerCapture(event.pointerId);
+  });
+  timeline.addEventListener('pointermove', (event) => {
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    if (!drag.active) {
+      if (Math.hypot(event.clientX - drag.x, event.clientY - drag.y) < 6) return;
+      drag.active = true;
+      drag.source.classList.add('dragging');
+      drag.frame = requestAnimationFrame(scrollDuringDrag);
+    }
+    drag.x = event.clientX;
+    drag.y = event.clientY;
+    markTarget(drag.x, drag.y);
+  });
+  timeline.addEventListener('pointerup', (event) => finish(event, true));
+  timeline.addEventListener('lostpointercapture', (event) => finish(event));
+  timeline.addEventListener('pointercancel', (event) => finish(event));
+  timeline.addEventListener('keydown', (event) => {
+    const handle = event.target.closest('.drag-handle');
+    if (!handle || updating || drag || !['ArrowUp', 'ArrowDown'].includes(event.key)) return;
+    event.preventDefault();
+    const cards = [...timeline.querySelectorAll('.task-card')];
+    const source = handle.closest('.task-card');
+    const up = event.key === 'ArrowUp';
+    const target = cards[cards.indexOf(source) + (up ? -1 : 1)];
+    if (target) move(source, target, up ? 'before' : 'after');
+  });
 }
 
 function input(labelText, type, max, { value = '', required = true } = {}) {

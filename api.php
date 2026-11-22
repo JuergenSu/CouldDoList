@@ -67,6 +67,21 @@ function mutate(array &$lists, array $input): void {
     }
 
     $taskIndex = findIndex($list['tasks'], field($input, 'taskId', 24));
+    if ($action === 'moveTask') {
+        $targetIndex = findIndex($list['tasks'], field($input, 'targetId', 24));
+        $position = $input['position'] ?? '';
+        if ($taskIndex === $targetIndex || !in_array($position, ['before', 'after'], true)) {
+            throw new InvalidArgumentException('Ungültige Position für die Aufgabe.');
+        }
+
+        $task = $list['tasks'][$taskIndex];
+        $task['date'] = $list['tasks'][$targetIndex]['date'];
+        array_splice($list['tasks'], $taskIndex, 1);
+        $offset = $targetIndex - (int) ($taskIndex < $targetIndex) + (int) ($position === 'after');
+        array_splice($list['tasks'], $offset, 0, [$task]);
+        return;
+    }
+
     $task = &$list['tasks'][$taskIndex];
     if ($action === 'setDone' && is_bool($input['done'] ?? null)) {
         $task['done'] = $input['done'];
