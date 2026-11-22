@@ -58,7 +58,7 @@ function mutate(array &$lists, array $input): void {
         $list['tasks'][] = [
             'id' => bin2hex(random_bytes(12)),
             'title' => field($input, 'Aufgabe', 480),
-            'description' => field($input, 'Beschreibung', 12000),
+            'description' => field($input, 'Beschreibung', 12000, false),
             'date' => dateField($input),
             'done' => false,
             'comments' => [],

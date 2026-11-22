@@ -146,14 +146,14 @@ function render() {
   content.append(hero, heading, timeline);
 }
 
-function input(labelText, type, max, value = '') {
-  const label = node('label', '', labelText);
+function input(labelText, type, max, { value = '', required = true } = {}) {
+  const label = node('label', '', required ? labelText : labelText + ' (optional)');
   const control = node(type === 'textarea' ? 'textarea' : 'input');
   if (type === 'textarea') control.rows = 4;
   else control.type = type;
   if (max) control.maxLength = max;
   control.name = labelText;
-  control.required = true;
+  control.required = required;
   control.value = value;
   label.append(control);
   return label;
@@ -167,8 +167,8 @@ function openCreate(action) {
   get('fields').replaceChildren(...(isList ? [
     input('Liste', 'text', 100), input('Ereignis', 'text', 100), input('Datum', 'date'),
   ] : [
-    input('Aufgabe', 'text', 120), input('Beschreibung', 'textarea', 3000),
-    input('Datum', 'date', null, lists.find((list) => list.id === listId).date),
+    input('Aufgabe', 'text', 120), input('Beschreibung', 'textarea', 3000, { required: false }),
+    input('Datum', 'date', null, { value: lists.find((list) => list.id === listId).date }),
   ]));
   showError(createForm.querySelector('.form-error'));
   createDialog.showModal();
@@ -191,7 +191,9 @@ function drawTask() {
   error.id = 'task-error';
   error.hidden = true;
   error.setAttribute('role', 'alert');
-  detail.replaceChildren(when, node('p', 'description', task.description), toggle, error);
+  detail.replaceChildren(when);
+  if (task.description) detail.append(node('p', 'description', task.description));
+  detail.append(toggle, error);
   const comments = get('comments');
   comments.replaceChildren();
   if (!task.comments.length) comments.append(node('p', 'meta', 'Noch keine Kommentare.'));
