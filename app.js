@@ -5,6 +5,9 @@ const createDialog = get('create-dialog');
 const taskDialog = get('task-dialog');
 const createForm = get('create-form');
 const commentForm = get('comment-form');
+const commentName = commentForm.elements.Name;
+const editCommentName = get('edit-comment-name');
+const nameCookie = 'coulddolist_comment_name';
 const dateFormat = new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
 const commentFormat = new Intl.DateTimeFormat('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
 let lists = [];
@@ -217,9 +220,40 @@ function drawTask() {
   }
 }
 
+function savedCommentName() {
+  const prefix = nameCookie + '=';
+  const cookie = document.cookie.split(';').map((entry) => entry.trim()).find((entry) => entry.startsWith(prefix));
+  try {
+    return cookie ? decodeURIComponent(cookie.slice(prefix.length)) : '';
+  } catch {
+    return '';
+  }
+}
+
+function setCommentName(value) {
+  commentName.value = value;
+  commentName.readOnly = Boolean(value);
+  editCommentName.hidden = !value;
+}
+
+function rememberCommentName(value) {
+  const maxAge = value ? 31536000 : 0;
+  const secure = location.protocol === 'https:' ? '; Secure' : '';
+  document.cookie = nameCookie + '=' + encodeURIComponent(value) + '; Max-Age=' + maxAge + '; SameSite=Lax' + secure;
+  setCommentName(value);
+}
+
+editCommentName.addEventListener('click', () => {
+  commentName.readOnly = false;
+  editCommentName.hidden = true;
+  commentName.select();
+  commentName.focus();
+});
+
 function openTask(id) {
   taskId = id;
   commentForm.reset();
+  setCommentName(savedCommentName());
   showError(commentForm.querySelector('.form-error'));
   drawTask();
   taskDialog.showModal();
@@ -255,12 +289,14 @@ createForm.addEventListener('submit', (event) => {
 
 commentForm.addEventListener('submit', (event) => {
   event.preventDefault();
-  save({ ...Object.fromEntries(new FormData(commentForm)), action: 'comment', listId, taskId },
-    event.submitter, commentForm.querySelector('.form-error'), () => {
-      commentForm.elements.Kommentar.value = '';
-      drawTask();
-      commentForm.elements.Kommentar.focus();
-    });
+  const name = commentName.value.trim();
+  const payload = { ...Object.fromEntries(new FormData(commentForm)), Name: name, action: 'comment', listId, taskId };
+  save(payload, event.submitter, commentForm.querySelector('.form-error'), () => {
+    rememberCommentName(name);
+    commentForm.elements.Kommentar.value = '';
+    drawTask();
+    commentForm.elements.Kommentar.focus();
+  });
 });
 
 get('new-list').addEventListener('click', () => openCreate('createList'));
@@ -291,3 +327,9 @@ async function load() {
   }
 }
 load();
+
+if (window.isSecureContext && 'serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch((error) => {
+    console.error('CouldDoList: Service Worker konnte nicht registriert werden.', error);
+  });
+}

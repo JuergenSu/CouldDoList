@@ -4,13 +4,17 @@ Deutschsprachige Aufgabenplanung für Ereignisse wie Weihnachten, Ostern oder Ur
 
 ## Auf den Webspace kopieren
 
-1. Die Dateien `index.html`, `style.css`, `app.js`, `api.php` und den Ordner `data/` in einen Ordner auf einem Webspace mit **PHP 8.1 oder neuer** hochladen. Die versteckte Datei `data/.htaccess` gehört dazu.
+1. Die Dateien `index.html`, `style.css`, `app.js`, `api.php`, `manifest.webmanifest`, `sw.js` und die Ordner `data/` und `icons/` in einen Ordner auf einem Webspace mit **PHP 8.1 oder neuer** hochladen. Die versteckte Datei `data/.htaccess` gehört dazu.
 2. Dem PHP-Prozess Schreibrechte für `data/` geben.
 3. Den Ordner im Browser öffnen. PHP legt beim ersten Speichern `data/lists.json` an.
 
 Beim üblichen Apache-Webspace muss `.htaccess` im Datenordner wirksam sein. Bei Nginx den direkten Zugriff auf `data/` in der Serverkonfiguration sperren oder `COULDDO_DATA_DIR` in der PHP-Umgebung auf ein vorhandenes, beschreibbares Verzeichnis außerhalb des Webroots setzen.
 
 Alle Besucher derselben Installation teilen sich die Listen und können sie bearbeiten. Wenn nur bestimmte Personen Zugriff haben sollen, lässt sich der Ordner über den Webspace schützen. Für Backups genügt eine Kopie von `lists.json`.
+
+## Auf dem Handy installieren
+
+Die App über **HTTPS** öffnen. Unter Android in Chrome im Browsermenü **App installieren** oder **Zum Startbildschirm hinzufügen** wählen. Auf dem iPhone in Safari **Teilen → Zum Home-Bildschirm** wählen. Die installierte App öffnet sich in einem eigenen Fenster. Für Aufgaben und Kommentare braucht sie eine Verbindung zum Webspace.
 
 ## Lokal starten
 

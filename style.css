@@ -83,3 +83,8 @@ form .primary, #task-detail .secondary { justify-self: start; }
   .layout { grid-template-columns: minmax(0, 1fr); padding-block: 1.25rem; }
   nav { grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr)); }
 }
+
+.comment-name { display: flex; align-items: end; gap: .5rem; }
+.comment-name label { flex: 1; min-width: 0; }
+.comment-name input:read-only { background: #edf3ed; }
+#edit-comment-name { min-width: 2.75rem; padding-inline: .5rem; font-size: 1.25rem; }

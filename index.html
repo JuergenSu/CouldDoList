@@ -6,6 +6,9 @@
   <meta name="theme-color" content="#edf1eb">
   <meta name="description" content="Aufgaben, Termine und Gespräche für dein nächstes Ereignis.">
   <title>CouldDoList</title>
+  <link rel="icon" href="icons/icon-32.png" type="image/png" sizes="32x32">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="style.css">
   <script src="app.js" defer></script>
 </head>
@@ -38,7 +41,10 @@
       <h3 id="conversation-title">Kommentare</h3>
       <div id="comments"></div>
       <form id="comment-form">
-        <label>Name (optional)<input name="Name" maxlength="60" autocomplete="nickname"></label>
+        <div class="comment-name">
+          <label>Name (optional)<input name="Name" maxlength="60" autocomplete="nickname"></label>
+          <button type="button" id="edit-comment-name" class="secondary" aria-label="Kommentarnamen ändern" title="Kommentarnamen ändern" hidden>✎</button>
+        </div>
         <label>Kommentar<textarea name="Kommentar" maxlength="2000" rows="3" required></textarea></label>
         <p class="form-error" role="alert" hidden></p>
         <button class="primary" type="submit">Kommentar hinzufügen</button>
