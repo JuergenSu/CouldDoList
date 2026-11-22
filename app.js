@@ -8,6 +8,7 @@ const commentForm = get('comment-form');
 const commentName = commentForm.elements.Name;
 const editCommentName = get('edit-comment-name');
 const nameCookie = 'coulddolist_comment_name';
+const millisecondsPerDay = 86_400_000;
 const dateFormat = new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
 const commentFormat = new Intl.DateTimeFormat('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
 let lists = [];
@@ -37,6 +38,13 @@ function dateLabel(value) {
 function calendarDate() {
   const now = new Date();
   return [now.getFullYear(), now.getMonth() + 1, now.getDate()].map((part) => String(part).padStart(2, '0')).join('-');
+}
+
+function daysUntilLabel(date, today) {
+  const days = (Date.parse(date) - Date.parse(today)) / millisecondsPerDay;
+  if (days < 0) return 'Zieltermin vorbei';
+  if (days === 0) return 'Heute';
+  return days === 1 ? 'Noch 1 Tag' : 'Noch ' + days + ' Tage';
 }
 
 function time(value) {
@@ -84,6 +92,7 @@ function cover(filename) {
 }
 
 function render() {
+  const today = calendarDate();
   const list = lists.find((entry) => entry.id === listId) || lists[0];
   listId = list?.id;
   const nav = get('lists');
@@ -92,7 +101,10 @@ function render() {
     const item = button('', 'list-link', () => selectList(entry.id));
     if (entry.id === listId) item.setAttribute('aria-current', 'true');
     const summary = node('span', 'list-summary');
-    summary.append(time(entry.date), node('span', '', completion(entry).percent + ' % erledigt'));
+    const metrics = node('span', 'list-metrics');
+    metrics.append(node('span', '', completion(entry).percent + ' % erledigt'),
+      node('span', '', daysUntilLabel(entry.date, today)));
+    summary.append(time(entry.date), metrics);
     const details = node('span', 'list-details');
     details.append(node('strong', '', entry.title), summary);
     const glyph = node('span', 'list-glyph');
@@ -122,7 +134,9 @@ function render() {
   progress.value = percent;
   progress.setAttribute('aria-label', 'Erledigte Aufgaben in Prozent');
   const progressText = node('div', 'progress-text');
-  progressText.append(node('span', '', done + ' von ' + list.tasks.length + ' Aufgaben erledigt'), node('strong', '', percent + ' %'));
+  const metrics = node('div', 'progress-metrics');
+  metrics.append(node('strong', '', percent + ' %'), node('span', '', daysUntilLabel(list.date, today)));
+  progressText.append(node('span', '', done + ' von ' + list.tasks.length + ' Aufgaben erledigt'), metrics);
   copy.append(event, node('h1', '', list.title), progressText, progress);
   hero.append(copy, cover('list-plan'));
 
@@ -133,7 +147,6 @@ function render() {
   const timeline = node('ol', 'timeline');
   const sortHint = node('p', 'meta sort-hint', 'Ziehe eine Aufgabe am Griff auf ein Datum oder nutze dort die Pfeiltasten. Das Zieldatum wird zur neuen Fälligkeit.');
   sortHint.id = 'sort-hint';
-  const today = calendarDate();
   let start = today;
   let end = list.date > today ? list.date : today;
   const tasksByDate = new Map();
@@ -147,7 +160,7 @@ function render() {
   const canSort = list.tasks.length > 0 && (start !== end || list.tasks.length > 1);
   // Step through UTC dates so days stay consecutive across daylight saving time changes.
   const endDay = Date.parse(end);
-  for (let day = Date.parse(start); day <= endDay; day += 86_400_000) {
+  for (let day = Date.parse(start); day <= endDay; day += millisecondsPerDay) {
     const date = new Date(day).toISOString().slice(0, 10);
     const tasks = tasksByDate.get(date) ?? [];
     const row = node('li', 'timeline-row');

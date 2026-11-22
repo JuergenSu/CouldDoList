@@ -82,7 +82,8 @@ nav:not(:empty) { margin-top: .75rem; }
 .list-details { min-width: 0; flex: 1; }
 .list-details > strong { font-size: .9375rem; }
 .list-summary { display: flex; flex-wrap: wrap; column-gap: .5rem; }
-.list-summary span { font-weight: 600; }
+.list-metrics, .progress-metrics { display: inline-flex; align-items: baseline; flex-wrap: wrap; gap: .125rem .5rem; }
+.list-metrics { font-weight: 600; }
 .list-glyph {
   position: relative;
   flex: 0 0 1.5rem;
@@ -165,6 +166,7 @@ h1 { font-size: clamp(2.25rem, 4.6vw, 4.25rem); }
 .event > span { color: #fff; }
 .event time { padding: .2rem .55rem; border: 1px solid #ffffff38; border-radius: .375rem; }
 .progress-text { flex-wrap: wrap; gap: .25rem .625rem; color: #d6e8d9; font-size: .875rem; }
+.progress-metrics { color: #fff; }
 .progress-text strong { color: white; font-size: 1rem; font-variant-numeric: tabular-nums; }
 progress {
   display: block;
