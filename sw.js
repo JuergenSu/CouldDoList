@@ -1,7 +1,7 @@
 'use strict';
 
 const cachePrefix = 'coulddolist:' + self.registration.scope + ':';
-const cacheName = cachePrefix + '9';
+const cacheName = cachePrefix + '10';
 const shell = [
   './index.html', './style.css', './app.js',
   './fonts/dm-sans.woff2', './fonts/dm-serif-display.woff2',

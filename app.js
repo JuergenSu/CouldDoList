@@ -167,10 +167,13 @@ function render() {
   // Step through UTC dates so days stay consecutive across daylight saving time changes.
   const endDay = Date.parse(end);
   for (let day = Date.parse(start); day <= endDay; day += millisecondsPerDay) {
-    const date = new Date(day).toISOString().slice(0, 10);
+    const calendarDay = new Date(day);
+    const date = calendarDay.toISOString().slice(0, 10);
+    const weekday = calendarDay.getUTCDay();
     const tasks = tasksByDate.get(date) ?? [];
     const row = node('li', 'timeline-row');
     row.dataset.date = date;
+    if (weekday === 0 || weekday === 6) row.classList.add('timeline-weekend');
 
     const label = node('div', date === today ? 'day-label today-label' : 'day-label');
     if (date === today) {

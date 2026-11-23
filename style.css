@@ -207,6 +207,7 @@ progress::-moz-progress-bar { background: #b7df9e; }
   margin-block: .25rem;
   border-radius: .625rem;
 }
+.timeline-weekend { background: #e4eddf; }
 .timeline-row:has(.task-card, .milestone) { margin-bottom: .75rem; }
 .timeline-row::before {
   content: '';
