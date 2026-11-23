@@ -349,7 +349,8 @@ input, textarea {
 }
 textarea { resize: vertical; }
 #create-form, #fields, #comment-form, #task-detail, #comments { display: grid; gap: .75rem; }
-form .primary, #task-detail .secondary { justify-self: start; }
+form .primary { justify-self: start; }
+.task-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
 .conversation { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border); }
 #comments { margin-block: .75rem; }
 .comment { border: 1px solid var(--border); background: var(--soft); padding: .65rem .8rem; border-radius: .625rem; }

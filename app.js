@@ -13,7 +13,9 @@ const editSidebarName = get('edit-sidebar-name');
 const saveSidebarName = get('save-sidebar-name');
 const nameCookie = 'coulddolist_comment_name';
 const millisecondsPerDay = 86_400_000;
-const dateFormat = new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
+const dateOptions = { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' };
+const dateFormat = new Intl.DateTimeFormat('de-DE', dateOptions);
+const timelineDateFormat = new Intl.DateTimeFormat('de-DE', { ...dateOptions, weekday: 'long' });
 const commentFormat = new Intl.DateTimeFormat('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
 let lists = [];
 let listId = new URL(location.href).searchParams.get('liste');
@@ -35,8 +37,8 @@ function button(label, className, action) {
   return element;
 }
 
-function dateLabel(value) {
-  return dateFormat.format(new Date(value + 'T00:00:00Z'));
+function dateLabel(value, format = dateFormat) {
+  return format.format(new Date(value + 'T00:00:00Z'));
 }
 
 function calendarDate() {
@@ -51,8 +53,8 @@ function daysUntilLabel(date, today) {
   return days === 1 ? 'Noch 1 Tag' : 'Noch ' + days + ' Tage';
 }
 
-function time(value) {
-  const element = node('time', '', dateLabel(value));
+function time(value, format) {
+  const element = node('time', '', dateLabel(value, format));
   element.dateTime = value;
   return element;
 }
@@ -122,7 +124,7 @@ function render() {
     const empty = node('section', 'overview empty');
     const copy = node('div', 'overview-copy');
     copy.append(node('h1', '', 'Deine erste Liste'), node('p', '', 'Lege ein Ereignis mit Zieltermin an und plane die Aufgaben bis dahin.'),
-      button('+ Neue Liste', 'primary', () => openCreate('createList')));
+      button('+ Neue Liste', 'primary', () => openEntryForm('createList')));
     empty.append(copy, cover('list-start'));
     content.append(empty);
     return;
@@ -145,7 +147,7 @@ function render() {
   hero.append(copy, cover('list-plan'));
 
   const heading = node('div', 'timeline-head');
-  const addTask = button('+ Neue Aufgabe', 'primary', () => openCreate('createTask'));
+  const addTask = button('+ Neue Aufgabe', 'primary', () => openEntryForm('createTask'));
   addTask.id = 'new-task';
   heading.append(node('h2', '', 'Zeitplan'), addTask);
   const timeline = node('ol', 'timeline');
@@ -175,7 +177,7 @@ function render() {
       row.classList.add('timeline-today');
       label.append(node('strong', '', 'Heute'));
     }
-    label.append(time(date));
+    label.append(time(date, timelineDateFormat));
     row.append(label);
 
     for (const task of tasks) {
@@ -329,16 +331,17 @@ function input(labelText, type, max, { value = '', required = true } = {}) {
   return label;
 }
 
-function openCreate(action) {
+function openEntryForm(action, task) {
   if (!loaded || updating) return;
   const isList = action === 'createList';
   createForm.dataset.action = action;
-  get('create-title').textContent = isList ? 'Neue Liste' : 'Neue Aufgabe';
+  get('create-title').textContent = isList ? 'Neue Liste' : task ? 'Aufgabe bearbeiten' : 'Neue Aufgabe';
   get('fields').replaceChildren(...(isList ? [
     input('Liste', 'text', 100), input('Ereignis', 'text', 100), input('Datum', 'date'),
   ] : [
-    input('Aufgabe', 'text', 120), input('Beschreibung', 'textarea', 3000, { required: false }),
-    input('Datum', 'date', null, { value: calendarDate() }),
+    input('Aufgabe', 'text', 120, { value: task?.title }),
+    input('Beschreibung', 'textarea', 3000, { value: task?.description, required: false }),
+    input('Datum', 'date', null, { value: task?.date ?? calendarDate() }),
   ]));
   showError(createForm.querySelector('.form-error'));
   createDialog.showModal();
@@ -357,13 +360,17 @@ function drawTask() {
     });
   });
   toggle.id = 'task-toggle';
+  const edit = button('Bearbeiten', 'secondary', () => openEntryForm('editTask', task));
+  edit.id = 'edit-task';
+  const actions = node('div', 'task-actions');
+  actions.append(toggle, edit);
   const error = node('p', 'form-error');
   error.id = 'task-error';
   error.hidden = true;
   error.setAttribute('role', 'alert');
   detail.replaceChildren(when);
   if (task.description) detail.append(node('p', 'description', task.description));
-  detail.append(toggle, error);
+  detail.append(actions, error);
   const comments = get('comments');
   comments.replaceChildren();
   if (!task.comments.length) comments.append(node('p', 'meta', 'Noch keine Kommentare.'));
@@ -462,8 +469,15 @@ createForm.addEventListener('submit', (event) => {
   event.preventDefault();
   const action = createForm.dataset.action;
   const payload = { ...Object.fromEntries(new FormData(createForm)), action, listId };
+  if (action === 'editTask') payload.taskId = taskId;
   save(payload, event.submitter, createForm.querySelector('.form-error'), () => {
     createDialog.close();
+    if (action === 'editTask') {
+      render();
+      drawTask();
+      get('edit-task').focus();
+      return;
+    }
     if (action === 'createList') selectList(lists.at(-1).id);
     else render();
     get(action === 'createList' ? 'new-list' : 'new-task').focus();
@@ -482,7 +496,7 @@ commentForm.addEventListener('submit', (event) => {
   });
 });
 
-get('new-list').addEventListener('click', () => openCreate('createList'));
+get('new-list').addEventListener('click', () => openEntryForm('createList'));
 taskDialog.addEventListener('close', () => {
   render();
   get('task-' + taskId)?.focus();

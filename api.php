@@ -39,6 +39,14 @@ function findIndex(array $items, string $id): int {
     throw new OutOfBoundsException('Dieser Eintrag wurde nicht gefunden.');
 }
 
+function taskFields(array $input): array {
+    return [
+        'title' => field($input, 'Aufgabe', 480),
+        'description' => field($input, 'Beschreibung', 12000, false),
+        'date' => dateField($input),
+    ];
+}
+
 function mutate(array &$lists, array $input): void {
     $action = $input['action'] ?? '';
     if ($action === 'createList') {
@@ -57,9 +65,7 @@ function mutate(array &$lists, array $input): void {
     if ($action === 'createTask') {
         $list['tasks'][] = [
             'id' => bin2hex(random_bytes(12)),
-            'title' => field($input, 'Aufgabe', 480),
-            'description' => field($input, 'Beschreibung', 12000, false),
-            'date' => dateField($input),
+            ...taskFields($input),
             'done' => false,
             'comments' => [],
         ];
@@ -94,7 +100,9 @@ function mutate(array &$lists, array $input): void {
     }
 
     $task = &$list['tasks'][$taskIndex];
-    if ($action === 'setDone' && is_bool($input['done'] ?? null)) {
+    if ($action === 'editTask') {
+        $task = array_replace($task, taskFields($input));
+    } elseif ($action === 'setDone' && is_bool($input['done'] ?? null)) {
         $task['done'] = $input['done'];
     } elseif ($action === 'comment') {
         $author = field($input, 'Name', 240, false);
