@@ -4,6 +4,7 @@ const get = (id) => document.getElementById(id);
 const createDialog = get('create-dialog');
 const taskDialog = get('task-dialog');
 const createForm = get('create-form');
+const deleteListButton = get('delete-list');
 const commentForm = get('comment-form');
 const commentName = commentForm.elements.Name;
 const editCommentName = get('edit-comment-name');
@@ -78,7 +79,8 @@ async function api(payload) {
 function selectList(id) {
   listId = id;
   const url = new URL(location.href);
-  url.searchParams.set('liste', id);
+  if (id) url.searchParams.set('liste', id);
+  else url.searchParams.delete('liste');
   history.replaceState(null, '', url);
   render();
 }
@@ -143,7 +145,9 @@ function render() {
   const metrics = node('div', 'progress-metrics');
   metrics.append(node('strong', '', percent + ' %'), node('span', '', daysUntilLabel(list.date, today)));
   progressText.append(node('span', '', done + ' von ' + list.tasks.length + ' Aufgaben erledigt'), metrics);
-  copy.append(event, node('h1', '', list.title), progressText, progress);
+  const editListButton = button('Liste bearbeiten', 'list-edit', () => openEntryForm('editList', list));
+  editListButton.id = 'edit-list';
+  copy.append(event, node('h1', '', list.title), progressText, progress, editListButton);
   hero.append(copy, cover('list-plan'));
 
   const heading = node('div', 'timeline-head');
@@ -334,17 +338,26 @@ function input(labelText, type, max, { value = '', required = true } = {}) {
   return label;
 }
 
-function openEntryForm(action, task) {
+function openEntryForm(action, entry) {
   if (!loaded || updating) return;
-  const isList = action === 'createList';
+  const isList = action === 'createList' || action === 'editList';
+  const titles = {
+    createList: 'Neue Liste',
+    editList: 'Liste bearbeiten',
+    createTask: 'Neue Aufgabe',
+    editTask: 'Aufgabe bearbeiten',
+  };
   createForm.dataset.action = action;
-  get('create-title').textContent = isList ? 'Neue Liste' : task ? 'Aufgabe bearbeiten' : 'Neue Aufgabe';
+  deleteListButton.hidden = action !== 'editList';
+  get('create-title').textContent = titles[action];
   get('fields').replaceChildren(...(isList ? [
-    input('Liste', 'text', 100), input('Ereignis', 'text', 100), input('Datum', 'date'),
+    input('Liste', 'text', 100, { value: entry?.title }),
+    input('Ereignis', 'text', 100, { value: entry?.event }),
+    input('Datum', 'date', null, { value: entry?.date }),
   ] : [
-    input('Aufgabe', 'text', 120, { value: task?.title }),
-    input('Beschreibung', 'textarea', 3000, { value: task?.description, required: false }),
-    input('Datum', 'date', null, { value: task?.date ?? calendarDate() }),
+    input('Aufgabe', 'text', 120, { value: entry?.title }),
+    input('Beschreibung', 'textarea', 3000, { value: entry?.description, required: false }),
+    input('Datum', 'date', null, { value: entry?.date ?? calendarDate() }),
   ]));
   showError(createForm.querySelector('.form-error'));
   createDialog.showModal();
@@ -483,7 +496,21 @@ createForm.addEventListener('submit', (event) => {
     }
     if (action === 'createList') selectList(lists.at(-1).id);
     else render();
-    get(action === 'createList' ? 'new-list' : 'new-task').focus();
+    const focusTarget = { createList: 'new-list', editList: 'edit-list', createTask: 'new-task' };
+    get(focusTarget[action]).focus();
+  });
+});
+
+deleteListButton.addEventListener('click', () => {
+  if (updating || createForm.dataset.action !== 'editList') return;
+  const list = lists.find((entry) => entry.id === listId);
+  if (!list || !window.confirm('„' + list.title + '“ mit allen Aufgaben und Kommentaren endgültig löschen?')) return;
+
+  save({ action: 'deleteList', listId }, deleteListButton, createForm.querySelector('.form-error'), () => {
+    createDialog.close();
+    selectList(lists[0]?.id);
+    get(lists.length ? 'edit-list' : 'new-list').focus();
+    get('status').textContent = 'Liste gelöscht.';
   });
 });
 

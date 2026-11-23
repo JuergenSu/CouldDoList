@@ -39,6 +39,14 @@ function findIndex(array $items, string $id): int {
     throw new OutOfBoundsException('Dieser Eintrag wurde nicht gefunden.');
 }
 
+function listFields(array $input): array {
+    return [
+        'title' => field($input, 'Liste', 400),
+        'event' => field($input, 'Ereignis', 400),
+        'date' => dateField($input),
+    ];
+}
+
 function taskFields(array $input): array {
     return [
         'title' => field($input, 'Aufgabe', 480),
@@ -52,16 +60,23 @@ function mutate(array &$lists, array $input): void {
     if ($action === 'createList') {
         $lists[] = [
             'id' => bin2hex(random_bytes(12)),
-            'title' => field($input, 'Liste', 400),
-            'event' => field($input, 'Ereignis', 400),
-            'date' => dateField($input),
+            ...listFields($input),
             'tasks' => [],
         ];
         return;
     }
 
     $listIndex = findIndex($lists, field($input, 'listId', 24));
+    if ($action === 'deleteList') {
+        array_splice($lists, $listIndex, 1);
+        return;
+    }
+
     $list = &$lists[$listIndex];
+    if ($action === 'editList') {
+        $list = array_replace($list, listFields($input));
+        return;
+    }
     if ($action === 'createTask') {
         $list['tasks'][] = [
             'id' => bin2hex(random_bytes(12)),

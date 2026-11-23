@@ -159,6 +159,19 @@ h1, .timeline-head h2, .dialog-head h2 {
 }
 h1 { font-size: clamp(2.25rem, 4.6vw, 4.25rem); }
 .hero h1 { margin-block: .65rem 1.625rem; }
+.list-edit {
+  margin-top: .875rem;
+  min-height: 2.75rem;
+  padding: .375rem .65rem;
+  border: 1px solid #ffffff50;
+  border-radius: .5rem;
+  color: #fff;
+  background: transparent;
+  font-size: .875rem;
+  font-weight: 600;
+}
+.list-edit:hover { background: #ffffff18; }
+.list-edit:focus-visible { outline-color: #c0b8ff; }
 .empty p { max-width: 34ch; margin-block: .875rem 1.25rem; color: var(--muted); }
 .event {
   display: flex;
@@ -360,7 +373,9 @@ input, textarea {
 textarea { resize: vertical; }
 #create-form, #fields, #comment-form, #task-detail, #comments { display: grid; gap: .75rem; }
 form .primary { justify-self: start; }
-.task-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.task-actions, .entry-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.danger { color: var(--red); background: #faeded; }
+.danger:hover { background: #f5e1de; }
 .conversation { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border); }
 #comments { margin-block: .75rem; }
 .comment { border: 1px solid var(--border); background: var(--soft); padding: .65rem .8rem; border-radius: .625rem; }
